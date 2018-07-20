@@ -1,3 +1,4 @@
+#!/usr/bin/pwsh
 Param(
   [string]$win_user,
   [string]$win_pass
@@ -21,8 +22,12 @@ $nodes.items | Where-Object { $_.metadata.labels.'beta.kubernetes.io/os' -eq 'wi
   $remoteZipPath = Invoke-Command -Session $_.pssession { 
     $paths = get-childitem c:\k\*.log -Exclude $using:lockedFiles
     $paths += $using:lockedFiles | Foreach-Object { Copy-Item "c:\k\$_" . -Passthru }
+    # docker ps
+    docker ps  > "docker_ps.txt"
+    $paths += "docker_ps.txt"
     Compress-Archive -Path $paths -DestinationPath $using:zipName
     Get-ChildItem $using:zipName
   } 
   Copy-Item -FromSession $_.pssession $remoteZipPath -Destination out/
+  
 }
