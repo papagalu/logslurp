@@ -1,6 +1,7 @@
 Param(
   [string]$win_user,
-  [string]$win_pass
+  [string]$win_pass,
+  [string]$OutputFolder = "out/"
 )
 
 # Constants
@@ -18,7 +19,7 @@ else {
 }
 
 
-$nodes = ./kubectl get node -o json | ConvertFrom-Json
+$nodes = kubectl get node -o json | ConvertFrom-Json
 $nodes.items | Where-Object { $_.metadata.labels.'beta.kubernetes.io/os' -eq 'windows' } | foreach-object {
   Add-Member -InputObject $_ -MemberType NoteProperty -Name "pssession" -Value (New-PSSession -ComputerName $_.status.nodeInfo.machineID -Credential $cred -UseSSL -Authentication basic)
   Write-Host Connected to $_.status.nodeInfo.machineID
@@ -45,7 +46,7 @@ $nodes.items | Where-Object { $_.metadata.labels.'beta.kubernetes.io/os' -eq 'wi
     Get-ChildItem $using:zipName
   }
   Write-Host Copying out logs
-  Copy-Item -FromSession $_.pssession $remoteZipPath -Destination out/
+  Copy-Item -FromSession $_.pssession $remoteZipPath -Destination $OutputFolder
   Write-Host "Done with $($_.status.nodeInfo.machineID)" #, closing session"
   # Remove-PSSession $_.pssession # BUG - seems to hang in a container
 }
